@@ -13,7 +13,7 @@ use Data::Dumper;
 # ======[ Script Header ]===============================================
 
 use vars qw{$VERSION %IRSSI};
-($VERSION) = '$Revision: 1.9 $' =~ / (\d+\.\d+) /;
+($VERSION) = '$Revision: 1.10 $' =~ / (\d+\.\d+) /;
 %IRSSI = (
 	  name	      => 'query',
 	  authors     => 'Peder Stray',
@@ -96,6 +96,7 @@ sub set_defaults {
     my($serv,$nick,$address) = @_;
     my $net = lc $serv->{chatnet};
 
+    return unless $address;
     $state{$net}{$nick}{address} = $address;
 
     for my $mask (sort {userhost_cmp($serv,$a,$b)}keys %defaults) {
@@ -559,10 +560,13 @@ Irssi::timeout_add(5000, 'check_queries', undef);
 # ======[ Initialization ]==============================================
 
 for my $query (Irssi::queries) {
-    my($net) = lc $query->{server}{chatnet};
+    my($net)  = lc $query->{server}{chatnet};
+    my($nick) = $query->{name};
 
-    $state{$net}{$query->{name}}{time}
+    $state{$net}{$nick}{time}
       = (sort $query->{last_unread_msg}, $query->{createtime}, time)[0];
+
+    set_defaults($query->{server}, $nick, $query->{address});
 }
 
 load_defaults;
