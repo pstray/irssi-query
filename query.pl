@@ -13,7 +13,7 @@ use Data::Dumper;
 # ======[ Script Header ]===============================================
 
 use vars qw{$VERSION %IRSSI};
-($VERSION) = '$Revision: 1.10 $' =~ / (\d+\.\d+) /;
+($VERSION) = '$Revision: 1.11 $' =~ / (\d+\.\d+) /;
 %IRSSI = (
 	  name	      => 'query',
 	  authors     => 'Peder Stray',
@@ -460,6 +460,7 @@ sub cmd_query {
 	}
 
 	if ($save && $state->{address}) {
+	    Irssi::signal_stop;
 	    my $mask = Irssi::Irc::get_mask($nick, $state->{address},
 					    Irssi::Irc::MASK_USER |
 					    Irssi::Irc::MASK_DOMAIN
