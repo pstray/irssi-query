@@ -13,7 +13,7 @@ use POSIX;
 # ======[ Script Header ]===============================================
 
 use vars qw{$VERSION %IRSSI};
-($VERSION) = '$Revision: 1.17 $' =~ / (\d+\.\d+) /;
+($VERSION) = '$Revision: 1.18 $' =~ / (\d+\.\d+) /;
 %IRSSI = (
 	  name	      => 'query',
 	  authors     => 'Peder Stray',
@@ -584,7 +584,9 @@ Irssi::theme_register(
 Irssi::settings_add_bool('query', 'query_autojump_own', 1);
 Irssi::settings_add_bool('query', 'query_autojump', 0);
 Irssi::settings_add_bool('query', 'query_noisy', 1);
-Irssi::settings_add_bool('query', 'query_unqueries', Irssi::version < 20020919.1507);
+Irssi::settings_add_bool('query', 'query_unqueries',
+			 Irssi::version <  20020919.1507 ||
+			 Irssi::version >= 20021006.1620 );
 
 Irssi::settings_add_int('query', 'query_autoclose', 0);
 Irssi::settings_add_int('query', 'query_autoclose_grace', 300);
