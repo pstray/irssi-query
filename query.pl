@@ -13,7 +13,7 @@ use Data::Dumper;
 # ======[ Script Header ]===============================================
 
 use vars qw{$VERSION %IRSSI};
-($VERSION) = '$Revision: 1.11 $' =~ / (\d+\.\d+) /;
+($VERSION) = '$Revision: 1.12 $' =~ / (\d+\.\d+) /;
 %IRSSI = (
 	  name	      => 'query',
 	  authors     => 'Peder Stray',
@@ -459,8 +459,15 @@ sub cmd_query {
 	    return;
 	}
 
-	if ($save && $state->{address}) {
+	if ($save) {
 	    Irssi::signal_stop;
+
+	    unless ($state->{address}) {
+		$query->printformat(MSGLEVEL_CLIENTCRAP,
+				    'query_crap', 'This query has no address yet');
+		return;
+	    }
+
 	    my $mask = Irssi::Irc::get_mask($nick, $state->{address},
 					    Irssi::Irc::MASK_USER |
 					    Irssi::Irc::MASK_DOMAIN
