@@ -13,7 +13,7 @@ use POSIX;
 # ======[ Script Header ]===============================================
 
 use vars qw{$VERSION %IRSSI};
-($VERSION) = '$Revision: 1.13 $' =~ / (\d+\.\d+) /;
+($VERSION) = '$Revision: 1.14 $' =~ / (\d+\.\d+) /;
 %IRSSI = (
 	  name	      => 'query',
 	  authors     => 'Peder Stray',
@@ -25,11 +25,12 @@ use vars qw{$VERSION %IRSSI};
 
 # ======[ Variables ]===================================================
 
-my($own);
+use vars qw(%state);
+*state = \%Query::state;	# used for tracking idletime and state
 
-my(%state);		# used for tracking idletime and state
-my(%defaults);		# used for storing defaults
-my($query_opts) = {};	# stores option abbrevs
+my($own);
+my(%defaults);			# used for storing defaults
+my($query_opts) = {};		# stores option abbrevs
 
 # ======[ Helper functions ]============================================
 
