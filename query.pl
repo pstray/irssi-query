@@ -13,7 +13,7 @@ use Data::Dumper;
 # ======[ Script Header ]===============================================
 
 use vars qw{$VERSION %IRSSI};
-($VERSION) = '$Revision: 1.8 $' =~ / (\d+\.\d+) /;
+($VERSION) = '$Revision: 1.9 $' =~ / (\d+\.\d+) /;
 %IRSSI = (
 	  name	      => 'query',
 	  authors     => 'Peder Stray',
@@ -517,6 +517,9 @@ Irssi::theme_register(
  'query_crap',
  '{line_start}{hilight Query:} $0',
 
+ 'query_warn',
+ '{line_start}{hilight Query:} {error Warning:} $0',
+
  'query_info',
  '%#$[8]0: $1',
 
@@ -563,6 +566,11 @@ for my $query (Irssi::queries) {
 }
 
 load_defaults;
+
+if (Irssi::settings_get_int("autoclose_query")) {
+    Irssi::printformat(MSGLEVEL_CLIENTCRAP, 'query_warn',
+		       "autoclose_query is set, please set to 0");
+}
 
 # ======[ END ]=========================================================
 
