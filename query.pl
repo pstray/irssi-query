@@ -7,16 +7,16 @@ use Irssi;
 
 # ======[ Script Header ]===============================================
 
-# Irssi Script Header 1.0
-# Name:		query
-# Authors:	Peder Stray <peder@ninja.no>
-# URL:		http://ninja.no/irssi/query.pl
-# License:	GPL
-# Date:		$Date: 2002/01/18 22:25:57 $
-# Version:	$Revision: 1.3 $
-# IrssiVersion:	0.7.98.CVS
-# Description:	Give you more control over when to jump to query windows
-#		and when to just tell you one has been created.
+use vars qw{$VERSION %IRSSI};
+($VERSION) = '$Revision: 1.5 $' =~ / (\d+\.\d+) /;
+%IRSSI = (
+	  name	      => 'query',
+	  authors     => 'Peder Stray',
+	  contact     => 'peder@ninja.no',
+	  url	      => 'http://ninja.no/irssi/query.pl',
+	  license     => 'GPL',
+	  description => 'Give you more control over when to jump to query windows and when to just tell you one has been created.',
+	 );
 
 # ======[ Variables ]===================================================
 
