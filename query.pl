@@ -13,7 +13,7 @@ use POSIX;
 # ======[ Script Header ]===============================================
 
 use vars qw{$VERSION %IRSSI};
-($VERSION) = '$Revision: 1.15 $' =~ / (\d+\.\d+) /;
+($VERSION) = '$Revision: 1.16 $' =~ / (\d+\.\d+) /;
 %IRSSI = (
 	  name	      => 'query',
 	  authors     => 'Peder Stray',
@@ -491,17 +491,54 @@ sub cmd_query {
 	    return;
 	}
 
-	if (!@params && ($opts || $state{$tag}{$nick}{immortal})) {
+	if (!@params) {
 	    Irssi::signal_stop;
-
 	    return if $opts;
 
-	    $witem->printformat(MSGLEVEL_CLIENTCRAP,
-				'query_crap', 'This query is immortal');
+	    if ($state{$tag}{$nick}{immortal}) {
+		$witem->printformat(MSGLEVEL_CLIENTCRAP,
+				    'query_crap', 'This query is immortal');
+	    } else {
+		$witem->command("unquery")
+		  if Irssi::settings_get_bool('query_unqueries');
+	    }
+
 	}
 
     }
 
+}
+
+# --------[ cmd_unquery ]-----------------------------------------------
+
+sub cmd_unquery {
+    my($data,$server,$witem) = @_;
+    my($param) = split " ", $data;
+    my($query,$tag,$nick);
+
+    if ($param) {
+	$query = $server->query_find($param) if $server;
+    } else {
+	$query = $witem if $witem && $witem->{type} eq 'QUERY';
+    }
+
+    if ($query) {
+	$nick = $query->{name};
+	$tag  = lc $query->{server_tag};
+
+	if ($state{$tag}{$nick}{immortal}) {
+	    if ($param) {
+		$witem->printformat(MSGLEVEL_CLIENTCRAP,
+				    'query_crap',
+				    "Query with $nick is immortal");
+	    } else {
+		$witem->printformat(MSGLEVEL_CLIENTCRAP,
+				    'query_crap',
+				    'This query is immortal');
+	    }
+	    Irssi::signal_stop;
+	}
+    }
 }
 
 # ======[ Setup ]=======================================================
@@ -509,6 +546,7 @@ sub cmd_query {
 # --------[ Register commands ]-----------------------------------------
 
 Irssi::command_bind('query', 'cmd_query');
+Irssi::command_bind('unquery', 'cmd_unquery');
 Irssi::command_set_options('query', 'immortal mortal info save +timeout');
 abbrev $query_opts, qw(window immortal mortal info save timeout);
 
@@ -546,6 +584,7 @@ Irssi::theme_register(
 Irssi::settings_add_bool('query', 'query_autojump_own', 1);
 Irssi::settings_add_bool('query', 'query_autojump', 0);
 Irssi::settings_add_bool('query', 'query_noisy', 1);
+Irssi::settings_add_bool('query', 'query_unqueries', Irssi::version < 20020919.1507);
 
 Irssi::settings_add_int('query', 'query_autoclose', 0);
 Irssi::settings_add_int('query', 'query_autoclose_grace', 300);
