@@ -13,7 +13,7 @@ use POSIX;
 # ======[ Script Header ]===============================================
 
 use vars qw{$VERSION %IRSSI};
-($VERSION) = '$Revision: 1.14 $' =~ / (\d+\.\d+) /;
+($VERSION) = '$Revision: 1.15 $' =~ / (\d+\.\d+) /;
 %IRSSI = (
 	  name	      => 'query',
 	  authors     => 'Peder Stray',
@@ -177,7 +177,7 @@ sub sig_print_message {
 
     my $server = $dest->{server};
     my $witem  = $server->window_item_find($dest->{target});
-    my $tag    = $server->{tag};
+    my $tag    = lc $server->{tag};
 
     next unless $witem->{type} eq 'QUERY';
 
@@ -210,7 +210,8 @@ sub sig_query_created {
 		$qwin->set_active();
 	    } else {
 		$awin->printformat(MSGLEVEL_CLIENTCRAP, 'query_created',
-				   $nick, $tag, $qwin->{refnum})
+				   $nick, $query->{server_tag},
+				   $qwin->{refnum})
 		  if Irssi::settings_get_bool('query_noisy');
 	    }
 	} else {
@@ -218,7 +219,8 @@ sub sig_query_created {
 		$qwin->set_active();
 	    } else {
 		$awin->printformat(MSGLEVEL_CLIENTCRAP, 'query_created',
-				   $nick, $tag, $qwin->{refnum})
+				   $nick, $query->{server_tag},
+				   $qwin->{refnum})
 		  if Irssi::settings_get_bool('query_noisy');
 	    }
 	}
@@ -233,7 +235,6 @@ sub sig_query_created {
 			   "" => "event empty",
 			  });
     $serv->send_raw("USERHOST :$nick");
-
 }
 
 # --------[ sig_query_destroyed ]---------------------------------------
@@ -271,10 +272,13 @@ sub sig_redir_query_userhost {
 
 sub sig_session_restore {
     open STATE, sprintf "< %s/query.state", Irssi::get_irssi_dir;
+    %state = ();	# only needed if bound as command
     while (<STATE>) {
 	chomp;
 	my($tag,$nick,%data) = split "\t";
-	$state{$tag}{$nick} = \%data;
+	for my $key (keys %data) {
+	    $state{lc $tag}{$nick}{$key} ||= $data{$key};
+	}
     }
     close STATE;
 }
@@ -333,7 +337,7 @@ sub check_queries {
 
 	# kill it off
 	Irssi::printformat(MSGLEVEL_CLIENTCRAP, 'query_closed',
-			   $query->{name}, $tag)
+			   $query->{name}, $query->{server_tag})
 	    if Irssi::settings_get_bool('query_noisy');
 	$query->destroy;
 
@@ -441,7 +445,7 @@ sub cmd_query {
 	    }
 
 	    @items = (
-		      Server   => $tag,
+		      Server   => $query->{server_tag},
 		      Nick     => $nick,
 		      Address  => $state->{address},
 		      Created  => time2str($query->{createtime}),
@@ -509,6 +513,8 @@ Irssi::command_set_options('query', 'immortal mortal info save +timeout');
 abbrev $query_opts, qw(window immortal mortal info save timeout);
 
 #Irssi::command_bind('debug', sub { print Dumper \%state });
+#Irssi::command_bind('query_save', 'sig_session_save');
+#Irssi::command_bind('query_restore', 'sig_session_restore');
 
 # --------[ Register formats ]------------------------------------------
 
@@ -568,17 +574,17 @@ Irssi::timeout_add(5000, 'check_queries', undef);
 
 # ======[ Initialization ]==============================================
 
+load_defaults;
+
 for my $query (Irssi::queries) {
     my($tag)  = lc $query->{server_tag};
     my($nick) = $query->{name};
 
     $state{$tag}{$nick}{time}
-      = (sort $query->{last_unread_msg}, $query->{createtime}, time)[0];
+      ||= $query->{last_unread_msg} || $query->{createtime} || time;
 
     set_defaults($query->{server}, $nick, $query->{address});
 }
-
-load_defaults;
 
 if (Irssi::settings_get_int("autoclose_query")) {
     Irssi::printformat(MSGLEVEL_CLIENTCRAP, 'query_warn',
