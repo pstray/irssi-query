@@ -8,12 +8,12 @@ use Irssi 20020428.1608;
 use Text::Abbrev;
 use POSIX;
 
-use Data::Dumper;
+#use Data::Dumper;
 
 # ======[ Script Header ]===============================================
 
 use vars qw{$VERSION %IRSSI};
-($VERSION) = '$Revision: 1.12 $' =~ / (\d+\.\d+) /;
+($VERSION) = '$Revision: 1.13 $' =~ / (\d+\.\d+) /;
 %IRSSI = (
 	  name	      => 'query',
 	  authors     => 'Peder Stray',
@@ -94,15 +94,15 @@ sub sec2str {
 
 sub set_defaults {
     my($serv,$nick,$address) = @_;
-    my $net = lc $serv->{chatnet};
+    my $tag = lc $serv->{tag};
 
     return unless $address;
-    $state{$net}{$nick}{address} = $address;
+    $state{$tag}{$nick}{address} = $address;
 
     for my $mask (sort {userhost_cmp($serv,$a,$b)}keys %defaults) {
 	if ($serv->mask_match_address($mask, $nick, $address)) {
 	    for my $key (keys %{$defaults{$mask}}) {
-		$state{$net}{$nick}{$key} = $defaults{$mask}{$key}
+		$state{$tag}{$nick}{$key} = $defaults{$mask}{$key}
 		  if $defaults{$mask}{$key} >= 0;
 	    }
 	}
@@ -176,11 +176,11 @@ sub sig_print_message {
 
     my $server = $dest->{server};
     my $witem  = $server->window_item_find($dest->{target});
-    my $net    = lc $server->{chatnet};
+    my $tag    = $server->{tag};
 
     next unless $witem->{type} eq 'QUERY';
 
-    $state{$net}{$witem->{name}}{time} = time;
+    $state{$tag}{$witem->{name}}{time} = time;
 }
 
 # --------[ sig_query_address_changed ]---------------------------------
@@ -201,7 +201,7 @@ sub sig_query_created {
 
     my $serv = $query->{server};
     my $nick = $query->{name};
-    my $net  = lc $serv->{chatnet};
+    my $tag  = lc $query->{server_tag};
 
     if ($auto && $qwin->{refnum} != $awin->{refnum}) {
 	if ($own eq $query->{name}) {
@@ -209,7 +209,7 @@ sub sig_query_created {
 		$qwin->set_active();
 	    } else {
 		$awin->printformat(MSGLEVEL_CLIENTCRAP, 'query_created',
-				   $nick, $qwin->{refnum})
+				   $nick, $tag, $qwin->{refnum})
 		  if Irssi::settings_get_bool('query_noisy');
 	    }
 	} else {
@@ -217,14 +217,14 @@ sub sig_query_created {
 		$qwin->set_active();
 	    } else {
 		$awin->printformat(MSGLEVEL_CLIENTCRAP, 'query_created',
-				   $nick, $qwin->{refnum})
+				   $nick, $tag, $qwin->{refnum})
 		  if Irssi::settings_get_bool('query_noisy');
 	    }
 	}
     }
     undef $own;
 
-    $state{$net}{$nick} = { time => time };
+    $state{$tag}{$nick} = { time => time };
 
     $serv->redirect_event('userhost', 1, ":$nick", -1, undef,
 			  {
@@ -240,7 +240,7 @@ sub sig_query_created {
 sub sig_query_destroyed {
     my($query) = @_;
 
-    delete $state{lc $query->{server}{chatnet}}{$query->{name}};
+    delete $state{lc $query->{server_tag}}{$query->{name}};
 }
 
 
@@ -248,9 +248,9 @@ sub sig_query_destroyed {
 
 sub sig_query_nick_changed {
     my($query,$old_nick) = @_;
-    my($net) = lc $query->{server}{chatnet};
+    my($tag) = lc $query->{server_tag};
 
-    $state{$net}{$query->{name}} = delete $state{$net}{$old_nick};
+    $state{$tag}{$query->{name}} = delete $state{$tag}{$old_nick};
 }
 
 # --------[ sig_redir_query_userhost ]----------------------------------
@@ -272,8 +272,8 @@ sub sig_session_restore {
     open STATE, sprintf "< %s/query.state", Irssi::get_irssi_dir;
     while (<STATE>) {
 	chomp;
-	my($net,$nick,%data) = split "\t";
-	$state{$net}{$nick} = \%data;
+	my($tag,$nick,%data) = split "\t";
+	$state{$tag}{$nick} = \%data;
     }
     close STATE;
 }
@@ -282,9 +282,9 @@ sub sig_session_restore {
 
 sub sig_session_save {
     open STATE, sprintf "> %s/query.state", Irssi::get_irssi_dir;
-    for my $net (keys %state) {
-	for my $nick (keys %{$state{$net}}) {
-	    print STATE join("\t",$net,$nick,%{$state{$net}{$nick}}), "\n";
+    for my $tag (keys %state) {
+	for my $nick (keys %{$state{$tag}}) {
+	    print STATE join("\t",$tag,$nick,%{$state{$tag}{$nick}}), "\n";
 	}
     }
     close STATE;
@@ -302,9 +302,9 @@ sub check_queries {
     my($win)    = Irssi::active_win;
 
     for my $query (@queries) {
-	my $net    = lc $query->{server}{chatnet};
+	my $tag    = lc $query->{server_tag};
 	my $name   = $query->{name};
-	my $state  = $state{$net}{$name};
+	my $state  = $state{$tag}{$name};
 
 	my $age    = time - $state->{time};
 	my $maxage = $defmax;
@@ -332,7 +332,7 @@ sub check_queries {
 
 	# kill it off
 	Irssi::printformat(MSGLEVEL_CLIENTCRAP, 'query_closed',
-			   $query->{name})
+			   $query->{name}, $tag)
 	    if Irssi::settings_get_bool('query_noisy');
 	$query->destroy;
 
@@ -347,7 +347,7 @@ sub cmd_query {
     my($data,$server,$witem) = @_;
     my(@data) = split " ", $data;
 
-    my(@params,@opts,$query,$net,$nick);
+    my(@params,@opts,$query,$tag,$nick);
     my($state,$info,$save);
 
     while (@data) {
@@ -381,9 +381,9 @@ sub cmd_query {
 
 		}
 
-	    } elsif ($net = Irssi::chatnet_find($param)) {
-		$net = $net->{name};
-		push @opts, "-$net";
+	    } elsif ($tag = Irssi::server_find_tag($param)) {
+		$tag = $tag->{tag};
+		push @opts, "-$tag";
 
 	    } else {
 		# bogus opt...
@@ -402,7 +402,7 @@ sub cmd_query {
 	Irssi::signal_continue("@opts @params",$server,$witem);
 
 	# find the query...
-	my $serv = Irssi::server_find_chatnet($net || $server->{chatnet});
+	my $serv = Irssi::server_find_tag($tag || $server->{tag});
 	return unless $serv;
 	$query = $serv->window_item_find($params[0]);
 
@@ -416,15 +416,15 @@ sub cmd_query {
 
     if ($query) {
 	$nick = $query->{name};
-	$net  = lc $query->{server}{chatnet};
+	$tag  = lc $query->{server_tag};
 
 	my $opts;
 	for (keys %$state) {
-	    $state{$net}{$nick}{$_} = $state->{$_};
+	    $state{$tag}{$nick}{$_} = $state->{$_};
 	    $opts++;
 	}
 
-	$state = $state{$net}{$nick};
+	$state = $state{$tag}{$nick};
 
 	if ($info) {
 	    Irssi::signal_stop();
@@ -440,7 +440,7 @@ sub cmd_query {
 	    }
 
 	    @items = (
-		      Server   => $net,
+		      Server   => $tag,
 		      Nick     => $nick,
 		      Address  => $state->{address},
 		      Created  => time2str($query->{createtime}),
@@ -486,7 +486,7 @@ sub cmd_query {
 	    return;
 	}
 
-	if (!@params && ($opts || $state{$net}{$nick}{immortal})) {
+	if (!@params && ($opts || $state{$tag}{$nick}{immortal})) {
 	    Irssi::signal_stop;
 
 	    return if $opts;
@@ -514,10 +514,10 @@ abbrev $query_opts, qw(window immortal mortal info save timeout);
 Irssi::theme_register(
 [
  'query_created',
- '{line_start}{hilight Query:} started with {nick $0} in window $1',
+ '{line_start}{hilight Query:} started with {nick $0} [$1] in window $2',
 
  'query_closed',
- '{line_start}{hilight Query:} closed with {nick $0}',
+ '{line_start}{hilight Query:} closed with {nick $0} [$1]',
 
  'query_info_header', '',
 
@@ -568,10 +568,10 @@ Irssi::timeout_add(5000, 'check_queries', undef);
 # ======[ Initialization ]==============================================
 
 for my $query (Irssi::queries) {
-    my($net)  = lc $query->{server}{chatnet};
+    my($tag)  = lc $query->{server_tag};
     my($nick) = $query->{name};
 
-    $state{$net}{$nick}{time}
+    $state{$tag}{$nick}{time}
       = (sort $query->{last_unread_msg}, $query->{createtime}, time)[0];
 
     set_defaults($query->{server}, $nick, $query->{address});
