@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2001-2002 by Peder Stray <peder@ninja.no>
+# Copyright (C) 2001-2003 by Peder Stray <peder@ninja.no>
 #
 
 use strict;
@@ -13,7 +13,7 @@ use POSIX;
 # ======[ Script Header ]===============================================
 
 use vars qw{$VERSION %IRSSI};
-($VERSION) = '$Revision: 1.18 $' =~ / (\d+\.\d+) /;
+($VERSION) = '$Revision: 1.20 $' =~ / (\d+\.\d+) /;
 %IRSSI = (
 	  name	      => 'query',
 	  authors     => 'Peder Stray',
@@ -176,6 +176,9 @@ sub sig_print_message {
     return unless $dest->{level} & MSGLEVEL_MSGS;
 
     my $server = $dest->{server};
+
+    return unless $server;
+
     my $witem  = $server->window_item_find($dest->{target});
     my $tag    = lc $server->{tag};
 
