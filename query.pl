@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2001-2003 by Peder Stray <peder@ninja.no>
+# Copyright (C) 2001-2004 by Peder Stray <peder@ninja.no>
 #
 
 use strict;
@@ -13,7 +13,7 @@ use POSIX;
 # ======[ Script Header ]===============================================
 
 use vars qw{$VERSION %IRSSI};
-($VERSION) = '$Revision: 1.20 $' =~ / (\d+\.\d+) /;
+($VERSION) = '$Revision: 1.21 $' =~ / (\d+\.\d+) /;
 %IRSSI = (
 	  name	      => 'query',
 	  authors     => 'Peder Stray',
@@ -305,8 +305,8 @@ sub sig_session_save {
 sub check_queries {
     my(@queries) = Irssi::queries;
 
-    my($defmax) = Irssi::settings_get_int('query_autoclose');
-    my($minage) = Irssi::settings_get_int('query_autoclose_grace');
+    my($defmax) = Irssi::settings_get_time('query_autoclose');
+    my($minage) = Irssi::settings_get_time('query_autoclose_grace');
     my($win)    = Irssi::active_win;
 
     for my $query (@queries) {
@@ -438,7 +438,7 @@ sub cmd_query {
 	    Irssi::signal_stop();
 	    my(@items,$key,$val);
 
-	    my $timeout = Irssi::settings_get_int('query_autoclose');
+	    my $timeout = Irssi::settings_get_time('query_autoclose');
 	    $timeout = $state->{maxage} if defined $state->{maxage};
 
 	    if ($timeout) {
@@ -591,8 +591,8 @@ Irssi::settings_add_bool('query', 'query_unqueries',
 			 Irssi::version <  20020919.1507 ||
 			 Irssi::version >= 20021006.1620 );
 
-Irssi::settings_add_int('query', 'query_autoclose', 0);
-Irssi::settings_add_int('query', 'query_autoclose_grace', 300);
+Irssi::settings_add_time('query', 'query_autoclose', 0);
+Irssi::settings_add_time('query', 'query_autoclose_grace', '5min');
 
 # --------[ Register signals ]------------------------------------------
 
@@ -630,7 +630,7 @@ for my $query (Irssi::queries) {
     set_defaults($query->{server}, $nick, $query->{address});
 }
 
-if (Irssi::settings_get_int("autoclose_query")) {
+if (Irssi::settings_get_time("autoclose_query")) {
     Irssi::printformat(MSGLEVEL_CLIENTCRAP, 'query_warn',
 		       "autoclose_query is set, please set to 0");
 }
