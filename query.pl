@@ -13,7 +13,7 @@ use POSIX;
 # ======[ Script Header ]===============================================
 
 use vars qw{$VERSION %IRSSI};
-($VERSION) = '$Revision: 1.16 $' =~ / (\d+\.\d+) /;
+($VERSION) = '$Revision: 1.17 $' =~ / (\d+\.\d+) /;
 %IRSSI = (
 	  name	      => 'query',
 	  authors     => 'Peder Stray',
@@ -179,7 +179,7 @@ sub sig_print_message {
     my $witem  = $server->window_item_find($dest->{target});
     my $tag    = lc $server->{tag};
 
-    next unless $witem->{type} eq 'QUERY';
+    return unless $witem->{type} eq 'QUERY';
 
     $state{$tag}{$witem->{name}}{time} = time;
 }
