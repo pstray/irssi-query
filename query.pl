@@ -13,7 +13,7 @@ use POSIX;
 # ======[ Script Header ]===============================================
 
 use vars qw{$VERSION %IRSSI};
-($VERSION) = '$Revision: 1.21 $' =~ / (\d+\.\d+) /;
+($VERSION) = '$Revision: 1.22 $' =~ / (\d+\.\d+) /;
 %IRSSI = (
 	  name	      => 'query',
 	  authors     => 'Peder Stray',
@@ -305,8 +305,8 @@ sub sig_session_save {
 sub check_queries {
     my(@queries) = Irssi::queries;
 
-    my($defmax) = Irssi::settings_get_time('query_autoclose');
-    my($minage) = Irssi::settings_get_time('query_autoclose_grace');
+    my($defmax) = Irssi::settings_get_time('query_autoclose')/1000;
+    my($minage) = Irssi::settings_get_time('query_autoclose_grace')/1000;
     my($win)    = Irssi::active_win;
 
     for my $query (@queries) {
@@ -438,7 +438,7 @@ sub cmd_query {
 	    Irssi::signal_stop();
 	    my(@items,$key,$val);
 
-	    my $timeout = Irssi::settings_get_time('query_autoclose');
+	    my $timeout = Irssi::settings_get_time('query_autoclose')/1000;
 	    $timeout = $state->{maxage} if defined $state->{maxage};
 
 	    if ($timeout) {
