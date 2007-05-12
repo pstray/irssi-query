@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2001-2004 by Peder Stray <peder@ninja.no>
+# Copyright (C) 2001-2007 by Peder Stray <peder@ninja.no>
 #
 
 use strict;
@@ -13,7 +13,7 @@ use POSIX;
 # ======[ Script Header ]===============================================
 
 use vars qw{$VERSION %IRSSI};
-($VERSION) = '$Revision: 1.22 $' =~ / (\d+\.\d+) /;
+($VERSION) = '$Revision: 1.23 $' =~ / (\d+\.\d+) /;
 %IRSSI = (
 	  name	      => 'query',
 	  authors     => 'Peder Stray',
@@ -89,6 +89,30 @@ sub sec2str {
     $ret =~ s/ $//;
 
     return $ret;
+}
+
+# --------[ str2sec ]---------------------------------------------------
+
+sub str2sec {
+    my($str) = @_;
+
+    for ($str) {
+	s/\s+//g;
+	s/d/*24h/g;
+	s/h/*60m/g;
+	s/m/*60s/g;
+	s/s/+/g;
+	s/\+$//;
+    }
+
+    if ($str =~ /^[0-9*+]+$/) {
+	$str = eval $str;
+    }
+    else {
+	$str = 0;
+    }
+
+    return $str;
 }
 
 # --------[ set_defaults ]----------------------------------------------
@@ -379,7 +403,7 @@ sub cmd_query {
 		    $state->{immortal} = 0;
 
 		} elsif ($opt eq 'timeout') {
-		    $state->{maxage} = shift @data;
+		    $state->{maxage} = str2sec shift @data;
 
 		} elsif ($opt eq 'save') {
 		    $save++;
