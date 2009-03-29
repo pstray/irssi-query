@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2001-2007 by Peder Stray <peder@ninja.no>
+# Copyright (C) 2001-2009 by Peder Stray <peder@ninja.no>
 #
 
 use strict;
@@ -13,7 +13,7 @@ use POSIX;
 # ======[ Script Header ]===============================================
 
 use vars qw{$VERSION %IRSSI};
-($VERSION) = '$Revision: 1.23 $' =~ / (\d+\.\d+) /;
+($VERSION) = '$Revision: 1.24 $' =~ / (\d+\.\d+) /;
 %IRSSI = (
 	  name	      => 'query',
 	  authors     => 'Peder Stray',
@@ -391,7 +391,7 @@ sub cmd_query {
 	    if ($opt) {
 
 		if ($opt eq 'window') {
-		    push @opts, $param;
+		    push @opts, "-$param";
 
 		} elsif ($opt eq 'immortal') {
 		    $state->{immortal} = 1;
