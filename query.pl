@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2001-2009 by Peder Stray <peder@ninja.no>
+# Copyright (C) 2001-2012 by Peder Stray <peder@ninja.no>
 #
 
 use strict;
@@ -13,7 +13,7 @@ use POSIX;
 # ======[ Script Header ]===============================================
 
 use vars qw{$VERSION %IRSSI};
-($VERSION) = '$Revision: 1.24 $' =~ / (\d+\.\d+) /;
+($VERSION) = '$Revision: 1.25 $' =~ / (\d+\.\d+) /;
 %IRSSI = (
 	  name	      => 'query',
 	  authors     => 'Peder Stray',
@@ -256,12 +256,18 @@ sub sig_query_created {
 
     $state{$tag}{$nick} = { time => time };
 
-    $serv->redirect_event('userhost', 1, ":$nick", -1, undef,
-			  {
-			   "event 302" => "redir query userhost",
-			   "" => "event empty",
-			  });
-    $serv->send_raw("USERHOST :$nick");
+    # So XMPP works too...
+    if (ref($serv) eq 'Irssi::Irc::Server') {
+	$serv->redirect_event('userhost', 1, ":$nick", -1, undef,
+			      {
+			       "event 302" => "redir query userhost",
+			       "" => "event empty",
+			      });
+	$serv->send_raw("USERHOST :$nick");
+    }
+    elsif (ref($serv) eq 'Irssi::Xmpp::Server') {
+	# maybe do someting here?
+    }
 }
 
 # --------[ sig_query_destroyed ]---------------------------------------
