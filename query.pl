@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2001-2012 by Peder Stray <peder@ninja.no>
+# Copyright (C) 2001-2019 by Peder Stray <peder@ninja.no>
 #
 
 use strict;
@@ -9,8 +9,6 @@ use Text::Abbrev;
 use POSIX;
 
 #use Data::Dumper;
-
-# ======[ Script Header ]===============================================
 
 use vars qw{$VERSION %IRSSI};
 ($VERSION) = '$Revision: 1.25 $' =~ / (\d+\.\d+) /;
@@ -23,18 +21,12 @@ use vars qw{$VERSION %IRSSI};
 	  description => 'Give you more control over when to jump to query windows and when to just tell you one has been created. Enhanced autoclose.',
 	 );
 
-# ======[ Variables ]===================================================
-
 use vars qw(%state);
 *state = \%Query::state;	# used for tracking idletime and state
 
 my($own);
 my(%defaults);			# used for storing defaults
 my($query_opts) = {};		# stores option abbrevs
-
-# ======[ Helper functions ]============================================
-
-# --------[ load_defaults ]---------------------------------------------
 
 sub load_defaults {
     my $file = Irssi::get_irssi_dir."/query";
@@ -50,8 +42,6 @@ sub load_defaults {
     close FILE;
 }
 
-# --------[ save_defaults ]---------------------------------------------
-
 sub save_defaults {
     my $file = Irssi::get_irssi_dir."/query";
     local *FILE;
@@ -66,8 +56,6 @@ sub save_defaults {
     }
     close FILE;
 }
-
-# --------[ sec2str ]---------------------------------------------------
 
 sub sec2str {
     my($sec) = @_;
@@ -91,8 +79,6 @@ sub sec2str {
     return $ret;
 }
 
-# --------[ str2sec ]---------------------------------------------------
-
 sub str2sec {
     my($str) = @_;
 
@@ -115,8 +101,6 @@ sub str2sec {
     return $str;
 }
 
-# --------[ set_defaults ]----------------------------------------------
-
 sub set_defaults {
     my($serv,$nick,$address) = @_;
     my $tag = lc $serv->{tag};
@@ -134,14 +118,10 @@ sub set_defaults {
     }
 }
 
-# --------[ time2str ]--------------------------------------------------
-
 sub time2str {
     my($time) = @_;
     return strftime("%c", localtime $time);
 }
-
-# --------[ userhost_cmp ]----------------------------------------------
 
 sub userhost_cmp {
     my($serv, $am, $bm) = @_;
@@ -176,23 +156,15 @@ sub userhost_cmp {
 
 }
 
-# ======[ Signal Hooks ]================================================
-
-# --------[ sig_message_own_private ]-----------------------------------
-
 sub sig_message_own_private {
     my($server,$msg,$nick,$orig_target) = @_;
     $own = $nick;
 }
 
-# --------[ sig_message_private ]---------------------------------------
-
 sub sig_message_private {
     my($server,$msg,$nick,$addr) = @_;
     undef $own;
 }
-
-# --------[ sig_print_message ]-----------------------------------------
 
 sub sig_print_message {
     my($dest, $text, $strip) = @_;
@@ -211,16 +183,12 @@ sub sig_print_message {
     $state{$tag}{$witem->{name}}{time} = time;
 }
 
-# --------[ sig_query_address_changed ]---------------------------------
-
 sub sig_query_address_changed {
     my($query) = @_;
 
     set_defaults($query->{server}, $query->{name}, $query->{address});
 
 }
-
-# --------[ sig_query_created ]-----------------------------------------
 
 sub sig_query_created {
     my ($query, $auto) = @_;
@@ -270,16 +238,11 @@ sub sig_query_created {
     }
 }
 
-# --------[ sig_query_destroyed ]---------------------------------------
-
 sub sig_query_destroyed {
     my($query) = @_;
 
     delete $state{lc $query->{server_tag}}{$query->{name}};
 }
-
-
-# --------[ sig_query_nick_changed ]------------------------------------
 
 sub sig_query_nick_changed {
     my($query,$old_nick) = @_;
@@ -287,8 +250,6 @@ sub sig_query_nick_changed {
 
     $state{$tag}{$query->{name}} = delete $state{$tag}{$old_nick};
 }
-
-# --------[ sig_redir_query_userhost ]----------------------------------
 
 sub sig_redir_query_userhost {
     my($serv,$data) = @_;
@@ -300,8 +261,6 @@ sub sig_redir_query_userhost {
 	}
     }
 }
-
-# --------[ sig_session_restore ]---------------------------------------
 
 sub sig_session_restore {
     open STATE, sprintf "< %s/query.state", Irssi::get_irssi_dir;
@@ -316,8 +275,6 @@ sub sig_session_restore {
     close STATE;
 }
 
-# --------[ sig_session_save ]------------------------------------------
-
 sub sig_session_save {
     open STATE, sprintf "> %s/query.state", Irssi::get_irssi_dir;
     for my $tag (keys %state) {
@@ -327,10 +284,6 @@ sub sig_session_save {
     }
     close STATE;
 }
-
-# ======[ Timers ]======================================================
-
-# --------[ check_queries ]---------------------------------------------
 
 sub check_queries {
     my(@queries) = Irssi::queries;
@@ -376,10 +329,6 @@ sub check_queries {
 
     }
 }
-
-# ======[ Commands ]====================================================
-
-# --------[ cmd_query ]-------------------------------------------------
 
 sub cmd_query {
     my($data,$server,$witem) = @_;
@@ -542,8 +491,6 @@ sub cmd_query {
 
 }
 
-# --------[ cmd_unquery ]-----------------------------------------------
-
 sub cmd_unquery {
     my($data,$server,$witem) = @_;
     my($param) = split " ", $data;
@@ -574,10 +521,6 @@ sub cmd_unquery {
     }
 }
 
-# ======[ Setup ]=======================================================
-
-# --------[ Register commands ]-----------------------------------------
-
 Irssi::command_bind('query', 'cmd_query');
 Irssi::command_bind('unquery', 'cmd_unquery');
 Irssi::command_set_options('query', 'immortal mortal info save +timeout');
@@ -586,8 +529,6 @@ abbrev $query_opts, qw(window immortal mortal info save timeout);
 #Irssi::command_bind('debug', sub { print Dumper \%state });
 #Irssi::command_bind('query_save', 'sig_session_save');
 #Irssi::command_bind('query_restore', 'sig_session_restore');
-
-# --------[ Register formats ]------------------------------------------
 
 Irssi::theme_register(
 [
@@ -612,8 +553,6 @@ Irssi::theme_register(
 
 ]);
 
-# --------[ Register settings ]-----------------------------------------
-
 Irssi::settings_add_bool('query', 'query_autojump_own', 1);
 Irssi::settings_add_bool('query', 'query_autojump', 0);
 Irssi::settings_add_bool('query', 'query_noisy', 1);
@@ -623,8 +562,6 @@ Irssi::settings_add_bool('query', 'query_unqueries',
 
 Irssi::settings_add_time('query', 'query_autoclose', 0);
 Irssi::settings_add_time('query', 'query_autoclose_grace', '5min');
-
-# --------[ Register signals ]------------------------------------------
 
 Irssi::signal_add_last('message own_private', 'sig_message_own_private');
 Irssi::signal_add_last('message private', 'sig_message_private');
@@ -642,11 +579,7 @@ Irssi::signal_add('redir query userhost', 'sig_redir_query_userhost');
 Irssi::signal_add('session save', 'sig_session_save');
 Irssi::signal_add('session restore', 'sig_session_restore');
 
-# --------[ Register timers ]-------------------------------------------
-
 Irssi::timeout_add(5000, 'check_queries', undef);
-
-# ======[ Initialization ]==============================================
 
 load_defaults;
 
@@ -664,10 +597,3 @@ if (Irssi::settings_get_time("autoclose_query")) {
     Irssi::printformat(MSGLEVEL_CLIENTCRAP, 'query_warn',
 		       "autoclose_query is set, please set to 0");
 }
-
-# ======[ END ]=========================================================
-
-# Local Variables:
-# header-initial-hide: t
-# mode: header-minor
-# end:
